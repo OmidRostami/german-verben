@@ -4,10 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verben – Konjugation</title>
-<link rel="icon" type="image/x-icon" href="favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -93,18 +89,18 @@
   const pronouns = ['ich', 'du', 'er/sie/es', 'wir', 'ihr', 'sie/Sie'];
 
   const hilfsVerben = {
-    sein:   { prasens: ['bin','bist','ist','sind','seid','sind'], prateritum: ['war','warst','war','waren','wart','waren'], konjunktiv: ['wäre','wärst','wäre','wären','wäret','wären'], perfekt: {partizip: 'gewesen', hilfsverb: 'sein'} },
-    haben:  { prasens: ['habe','hast','hat','haben','habt','haben'], prateritum: ['hatte','hattest','hatte','hatten','hattet','hatten'], konjunktiv: ['hätte','hättest','hätte','hätten','hättet','hätten'], perfekt: {partizip: 'gehabt', hilfsverb: 'haben'} },
-    werden: { prasens: ['werde','wirst','wird','werden','werdet','werden'], prateritum: ['wurde','wurdest','wurde','wurden','wurdet','wurden'], konjunktiv: ['würde','würdest','würde','würden','würdet','würden'], perfekt: {partizip: 'geworden', hilfsverb: 'sein'} }
+    sein:   { prasens: ['bin','bist','ist','sind','seid','sind'], perfekt: {partizip: 'gewesen', hilfsverb: 'sein'}, prateritum: ['war','warst','war','waren','wart','waren'], konjunktiv: ['wäre','wärest','wäre','wären','wäret','wären'] },
+    haben:  { prasens: ['habe','hast','hat','haben','habt','haben'], perfekt: {partizip: 'gehabt', hilfsverb: 'haben'}, prateritum: ['hatte','hattest','hatte','hatten','hattet','hatten'], konjunktiv: ['hätte','hättest','hätte','hätten','hättet','hätten'] },
+    werden: { prasens: ['werde','wirst','wird','werden','werdet','werden'], perfekt: {partizip: 'geworden', hilfsverb: 'sein'}, prateritum: ['wurde','wurdest','wurde','wurden','wurdet','wurden'], konjunktiv: ['würde','würdest','würde','würden','würdet','würden'] }
   };
 
   const modalVerben = {
-    können: { prasens: ['kann','kannst','kann','können','könnt','können'], prateritum: ['konnte','konntest','konnte','konnten','konntet','konnten'], konjunktiv: ['könnte','könntest','könnte','könnten','könntet','könnten'], perfekt: {partizip: 'gekonnt', hilfsverb: 'haben'} },
-    dürfen: { prasens: ['darf','darfst','darf','dürfen','dürft','dürfen'], prateritum: ['durfte','durftest','durfte','durften','durftet','durften'], konjunktiv: ['dürfte','dürftest','dürfte','dürften','dürftet','dürften'], perfekt: {partizip: 'gedurft', hilfsverb: 'haben'} },
-    müssen: { prasens: ['muss','musst','muss','müssen','müsst','müssen'], prateritum: ['musste','musstest','musste','mussten','musstet','mussten'], konjunktiv: ['müsste','müsstest','müsste','müssten','müsstet','müssten'], perfekt: {partizip: 'gemusst', hilfsverb: 'haben'} },
-    sollen: { prasens: ['soll','sollst','soll','sollen','sollt','sollen'], prateritum: ['sollte','solltest','sollte','sollten','solltet','sollten'], konjunktiv: ['sollte','solltest','sollte','sollten','solltet','sollten'], perfekt: {partizip: 'gesollt', hilfsverb: 'haben'} },
-    wollen: { prasens: ['will','willst','will','wollen','wollt','wollen'], prateritum: ['wollte','wolltest','wollte','wollten','wolltet','wollten'], konjunktiv: ['wollte','wolltest','wollte','wollten','wolltet','wollten'], perfekt: {partizip: 'gewollt', hilfsverb: 'haben'} },
-    mögen:  { prasens: ['mag','magst','mag','mögen','mögt','mögen'], prateritum: ['mochte','mochtest','mochte','mochten','mochtet','mochten'], konjunktiv: ['möchte','möchtest','möchte','möchten','möchtet','möchten'], perfekt: {partizip: 'gemocht', hilfsverb: 'haben'} }
+    können: { prasens: ['kann','kannst','kann','können','könnt','können'], perfekt: {partizip: 'gekonnt', hilfsverb: 'haben'}, prateritum: ['konnte','konntest','konnte','konnten','konntet','konnten'], konjunktiv: ['könnte','könntest','könnte','könnten','könntet','könnten'] },
+    dürfen: { prasens: ['darf','darfst','darf','dürfen','dürft','dürfen'], perfekt: {partizip: 'gedurft', hilfsverb: 'haben'}, prateritum: ['durfte','durftest','durfte','durften','durftet','durften'], konjunktiv: ['dürfte','dürftest','dürfte','dürften','dürftet','dürften'] },
+    müssen: { prasens: ['muss','musst','muss','müssen','müsst','müssen'], perfekt: {partizip: 'gemusst', hilfsverb: 'haben'}, prateritum: ['musste','musstest','musste','mussten','musstet','mussten'], konjunktiv: ['müsste','müsstest','müsste','müssten','müsstet','müssten'] },
+    sollen: { prasens: ['soll','sollst','soll','sollen','sollt','sollen'], perfekt: {partizip: 'gesollt', hilfsverb: 'haben'}, prateritum: ['sollte','solltest','sollte','sollten','solltet','sollten'], konjunktiv: ['sollte','solltest','sollte','sollten','solltet','sollten'] },
+    wollen: { prasens: ['will','willst','will','wollen','wollt','wollen'], perfekt: {partizip: 'gewollt', hilfsverb: 'haben'}, prateritum: ['wollte','wolltest','wollte','wollten','wolltet','wollten'], konjunktiv: ['wollte','wolltest','wollte','wollten','wolltet','wollten'] },
+    mögen:  { prasens: ['mag','magst','mag','mögen','mögt','mögen'], perfekt: {partizip: 'gemocht', hilfsverb: 'haben'}, prateritum: ['mochte','mochtest','mochte','mochten','mochtet','mochten'], konjunktiv: ['möchte','möchtest','möchte','möchten','möchtet','möchten'] }
   };
 
   const allVerbs = { ...hilfsVerben, ...modalVerben };
