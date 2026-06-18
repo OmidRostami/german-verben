@@ -202,16 +202,16 @@
 
       const wikitext = wdata.parse.wikitext['*'];
 
-      // Parse all template params
+      // Parse all template params from wikitext
       const params = {};
       for (const m of wikitext.matchAll(/\|([^=|\n{]+)=([^|\n}]*)/g)) {
-        const val = m[2].trim().replace(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g, '$1').replace(/''([^']+)''/g, '$1').trim();
+        const val = m[2].trim().replace(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g, '$1').replace(/<[^>]+>/g, '').trim();
         if (val) params[m[1].trim()] = val;
       }
 
       const g = (...keys) => { for (const k of keys) if (params[k]) return params[k]; return null; };
 
-      // Get what Wiktionary provides (ich/du/er for Präsens + ich for Konjunktiv II)
+      // Präsens — wikitext is reliable for these
       const pIch = g('Präsens_ich') || '—';
       const pDu  = g('Präsens_du') || '—';
       const pEr  = g('Präsens_er, sie, es', 'Präsens_er,sie,es', 'Präsens_er/sie/es') || '—';
@@ -219,7 +219,31 @@
       const pSie = g('Präsens_sie', 'Präsens_sie, Sie') || verb;
       const pIhr = g('Präsens_ihr') || deriveIhr(verb, pEr);
 
-      const k2Ich = g('Konjunktiv_II_ich') || null;
+      // Konjunktiv II ich — try wikitext first, then HTML table, then Präteritum fallback
+      let k2Ich = g('Konjunktiv_II_ich', 'Konjunktiv II_ich');
+
+      if (!k2Ich) {
+        // Parse rendered HTML table — look for row containing "Konjunktiv II"
+        try {
+          const hurl = `https://de.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(verb)}&prop=text&format=json&origin=*`;
+          const hres = await fetch(hurl);
+          const hdata = await hres.json();
+          if (hdata.parse) {
+            const doc2 = new DOMParser().parseFromString(hdata.parse.text['*'], 'text/html');
+            for (const row of doc2.querySelectorAll('tr')) {
+              const cells = [...row.querySelectorAll('td')];
+              if (cells.some(c => c.textContent.trim() === 'Konjunktiv II')) {
+                const form = cells[cells.length - 1].textContent.replace(/\[.*?\]/g, '').replace(/!/g, '').trim();
+                if (form && form !== 'Konjunktiv II') { k2Ich = form; break; }
+              }
+            }
+          }
+        } catch(e) {}
+      }
+
+      // Last resort: use Präteritum ich (correct for weak verbs where KII = Präteritum)
+      if (!k2Ich) k2Ich = g('Präteritum_ich');
+
       const konjunktiv = k2Ich ? deriveKonjunktiv2(k2Ich) : ['—','—','—','—','—','—'];
 
       buildRows([pIch, pDu, pEr, pWir, pIhr, pSie], konjunktiv);
