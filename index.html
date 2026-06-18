@@ -73,6 +73,11 @@
     <div class="section-label">Konjunktiv II</div>
     <div class="rows" id="konjunktiv"></div>
   </div>
+  <hr class="divider">
+  <div class="section">
+    <div class="section-label">Präteritum</div>
+    <div class="rows" id="prateritum"></div>
+  </div>
 </div>
 
 <script>
@@ -115,14 +120,16 @@
     document.getElementById('searchStatus').textContent = '';
     document.getElementById('searchStatus').className = 'search-status';
     document.getElementById('searchInput').value = '';
-    buildRows(allVerbs[v].prasens, allVerbs[v].konjunktiv);
+    buildRows(allVerbs[v].prasens, allVerbs[v].konjunktiv, false, null);
   }
 
-  function buildRows(prasens, konjunktiv, loading = false) {
-    ['prasens', 'konjunktiv'].forEach(tense => {
+  function buildRows(prasens, konjunktiv, loading = false, prateritum = null) {
+    const data = { prasens, konjunktiv, prateritum: prateritum || ['—','—','—','—','—','—'] };
+    ['prasens', 'konjunktiv', 'prateritum'].forEach(tense => {
       const container = document.getElementById(tense);
+      if (!container) return;
       container.innerHTML = '';
-      const forms = tense === 'prasens' ? prasens : konjunktiv;
+      const forms = data[tense];
       pronouns.forEach((pron, i) => {
         const row = document.createElement('div');
         row.className = 'row';
@@ -165,6 +172,17 @@
       base + 't',         // ihr
       base + 'n'          // sie/Sie
     ];
+  }
+
+  // Derive all 6 Präteritum forms from ich form
+  function derivePrateritum(ichForm) {
+    if (!ichForm || ichForm === '—') return ['—','—','—','—','—','—'];
+    const isWeak = ichForm.endsWith('te');
+    if (isWeak) {
+      return [ichForm, ichForm+'st', ichForm, ichForm+'n', ichForm+'t', ichForm+'n'];
+    }
+    const duSuffix = /[sßzx]$/.test(ichForm) ? 'est' : 'st';
+    return [ichForm, ichForm+duSuffix, ichForm, ichForm+'en', ichForm+'t', ichForm+'en'];
   }
 
   function cleanCell(el) {
@@ -246,7 +264,30 @@
 
       const konjunktiv = k2Ich ? deriveKonjunktiv2(k2Ich) : ['—','—','—','—','—','—'];
 
-      buildRows([pIch, pDu, pEr, pWir, pIhr, pSie], konjunktiv);
+      // Präteritum ich — same strategy as Konjunktiv II
+      let praetIch = g('Präteritum_ich');
+
+      if (!praetIch) {
+        try {
+          const hurl2 = `https://de.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(verb)}&prop=text&format=json&origin=*`;
+          const hres2 = await fetch(hurl2);
+          const hdata2 = await hres2.json();
+          if (hdata2.parse) {
+            const doc3 = new DOMParser().parseFromString(hdata2.parse.text['*'], 'text/html');
+            for (const row of doc3.querySelectorAll('tr')) {
+              const cells = [...row.querySelectorAll('td')];
+              if (cells.some(c => c.textContent.trim() === 'Präteritum')) {
+                const form = cells[cells.length - 1].textContent.replace(/\[.*?\]/g, '').trim();
+                if (form && form !== 'Präteritum') { praetIch = form; break; }
+              }
+            }
+          }
+        } catch(e) {}
+      }
+
+      const prateritum = derivePrateritum(praetIch);
+
+      buildRows([pIch, pDu, pEr, pWir, pIhr, pSie], konjunktiv, false, prateritum);
       status.className = 'search-status';
       status.textContent = 'Quelle: de.wiktionary.org';
 
@@ -265,7 +306,7 @@
 
   buildSelector('selector-hilfs', hilfsVerben);
   buildSelector('selector-modal', modalVerben);
-  buildRows(allVerbs[current].prasens, allVerbs[current].konjunktiv);
+  buildRows(allVerbs[current].prasens, allVerbs[current].konjunktiv, false, null);
 </script>
 </body>
 </html>
