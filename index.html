@@ -31,7 +31,6 @@
   }
 
   .container { width: 100%; max-width: 600px; }
-
   .header { text-align: center; margin-bottom: 2rem; }
 
   .verb {
@@ -82,16 +81,9 @@
   .pill:hover { border-color: var(--accent); color: var(--text); }
   .pill.active { background: var(--accent); border-color: var(--accent); color: white; }
 
-  /* Custom verb search */
-  .search-group {
-    margin-bottom: 2rem;
-  }
+  .search-group { margin-bottom: 2rem; }
 
-  .search-wrap {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-  }
+  .search-wrap { display: flex; gap: 0.5rem; align-items: center; }
 
   .search-input {
     flex: 1;
@@ -214,7 +206,7 @@
   const pronouns = ['ich', 'du', 'er/sie/es', 'wir', 'ihr', 'sie/Sie'];
 
   const hilfsVerben = {
-    sein:   { prasens: ['bin','bist','ist','sind','seid','sind'], konjunktiv: ['wäre','wärst','wäre','wären','wäret','wären'] },
+    sein:   { prasens: ['bin','bist','ist','sind','seid','sind'], konjunktiv: ['wäre','wärest','wäre','wären','wäret','wären'] },
     haben:  { prasens: ['habe','hast','hat','haben','habt','haben'], konjunktiv: ['hätte','hättest','hätte','hätten','hättet','hätten'] },
     werden: { prasens: ['werde','wirst','wird','werden','werdet','werden'], konjunktiv: ['würde','würdest','würde','würden','würdet','würden'] }
   };
@@ -249,6 +241,7 @@
     document.getElementById('verbTitle').textContent = v;
     document.getElementById('searchStatus').textContent = '';
     document.getElementById('searchStatus').className = 'search-status';
+    document.getElementById('searchInput').value = '';
     buildRows(allVerbs[v].prasens, allVerbs[v].konjunktiv);
   }
 
@@ -267,6 +260,10 @@
     });
   }
 
+  function cleanText(el) {
+    return el ? el.textContent.replace(/\[.*?\]/g, '').trim() : '—';
+  }
+
   async function searchVerb() {
     const input = document.getElementById('searchInput');
     const verb = input.value.trim().toLowerCase();
@@ -275,7 +272,6 @@
     const status = document.getElementById('searchStatus');
     const btn = document.getElementById('searchBtn');
 
-    // Deactivate pills
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
     document.getElementById('verbTitle').textContent = verb;
     status.className = 'search-status';
@@ -284,7 +280,8 @@
     buildRows([], [], true);
 
     try {
-      const url = `https://de.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(verb)}&prop=wikitext&format=json&origin=*`;
+      // Fetch rendered HTML from Wiktionary
+      const url = `https://de.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(verb)}&prop=text&format=json&origin=*`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -295,35 +292,75 @@
         return;
       }
 
-      const wikitext = data.parse.wikitext['*'];
-      const params = {};
-      for (const match of wikitext.matchAll(/\|([^=\n{|}]+)=([^|\n{}]*)/g)) {
-        params[match[1].trim()] = match[2].trim().replace(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g, '$1');
+      const html = data.parse.text['*'];
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Find the conjugation table — look for table with Präsens header
+      const tables = doc.querySelectorAll('table.wikitable');
+      let prasens    = null;
+      let konjunktiv = null;
+
+      for (const table of tables) {
+        const headers = [...table.querySelectorAll('th')].map(th => th.textContent.trim());
+        const prasensIdx    = headers.findIndex(h => h === 'Präsens');
+        const konjunktivIdx = headers.findIndex(h => h === 'Konjunktiv II');
+
+        if (prasensIdx === -1) continue;
+
+        // Get data rows (skip header rows)
+        const rows = [...table.querySelectorAll('tr')].filter(tr => tr.querySelectorAll('td').length > 0);
+
+        if (rows.length >= 6) {
+          prasens    = rows.slice(0, 6).map(tr => {
+            const cells = tr.querySelectorAll('td');
+            return cleanText(cells[prasensIdx] || cells[1]);
+          });
+          konjunktiv = rows.slice(0, 6).map(tr => {
+            const cells = tr.querySelectorAll('td');
+            if (konjunktivIdx !== -1 && cells[konjunktivIdx]) return cleanText(cells[konjunktivIdx]);
+            return '—';
+          });
+          break;
+        }
       }
 
-      const get = (...keys) => { for (const k of keys) if (params[k]) return params[k]; return '—'; };
+      // Fallback: try wikitext param parsing
+      if (!prasens) {
+        const wurl = `https://de.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(verb)}&prop=wikitext&format=json&origin=*`;
+        const wres = await fetch(wurl);
+        const wdata = await wres.json();
+        const wikitext = wdata.parse?.wikitext?.['*'] || '';
 
-      const prasens = [
-        get('Präsens_ich'),
-        get('Präsens_du'),
-        get('Präsens_er, sie, es', 'Präsens_er,sie,es', 'Präsens_er/sie/es'),
-        get('Präsens_wir'),
-        get('Präsens_ihr'),
-        get('Präsens_sie', 'Präsens_sie, Sie')
-      ];
+        const params = {};
+        for (const m of wikitext.matchAll(/\|([^=|\n{]+)=([^|\n}]*)/g)) {
+          const val = m[2].trim().replace(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g, '$1');
+          if (val) params[m[1].trim()] = val;
+        }
 
-      const konjunktiv = [
-        get('Konjunktiv_II_ich'),
-        get('Konjunktiv_II_du'),
-        get('Konjunktiv_II_er, sie, es', 'Konjunktiv_II_er,sie,es', 'Konjunktiv_II_er/sie/es'),
-        get('Konjunktiv_II_wir'),
-        get('Konjunktiv_II_ihr'),
-        get('Konjunktiv_II_sie', 'Konjunktiv_II_sie, Sie')
-      ];
+        const g = (...keys) => { for (const k of keys) if (params[k]) return params[k]; return null; };
+
+        prasens = [
+          g('Präsens_ich') || '—',
+          g('Präsens_du') || '—',
+          g('Präsens_er, sie, es','Präsens_er,sie,es') || '—',
+          g('Präsens_wir') || verb,
+          g('Präsens_ihr') || '—',
+          g('Präsens_sie','Präsens_sie, Sie') || verb
+        ];
+        konjunktiv = [
+          g('Konjunktiv_II_ich') || '—',
+          g('Konjunktiv_II_du') || '—',
+          g('Konjunktiv_II_er, sie, es','Konjunktiv_II_er,sie,es') || '—',
+          g('Konjunktiv_II_wir') || '—',
+          g('Konjunktiv_II_ihr') || '—',
+          g('Konjunktiv_II_sie','Konjunktiv_II_sie, Sie') || '—'
+        ];
+      }
 
       buildRows(prasens, konjunktiv);
       status.className = 'search-status';
-      status.textContent = `Quelle: de.wiktionary.org`;
+      status.textContent = 'Quelle: de.wiktionary.org';
 
     } catch (e) {
       status.className = 'search-status error';
