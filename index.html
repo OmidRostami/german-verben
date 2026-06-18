@@ -206,7 +206,7 @@
   const pronouns = ['ich', 'du', 'er/sie/es', 'wir', 'ihr', 'sie/Sie'];
 
   const hilfsVerben = {
-    sein:   { prasens: ['bin','bist','ist','sind','seid','sind'], konjunktiv: ['wäre','wärest','wäre','wären','wäret','wären'] },
+    sein:   { prasens: ['bin','bist','ist','sind','seid','sind'], konjunktiv: ['wäre','wärst','wäre','wären','wäret','wären'] },
     haben:  { prasens: ['habe','hast','hat','haben','habt','haben'], konjunktiv: ['hätte','hättest','hätte','hätten','hättet','hätten'] },
     werden: { prasens: ['werde','wirst','wird','werden','werdet','werden'], konjunktiv: ['würde','würdest','würde','würden','würdet','würden'] }
   };
@@ -280,8 +280,8 @@
     buildRows([], [], true);
 
     try {
-      // Fetch rendered HTML from Wiktionary
-      const url = `https://de.wiktionary.org/w/api.php?action=parse&page=${encodeURIComponent(verb)}&prop=text&format=json&origin=*`;
+      // Fetch full conjugation from Flexion: page
+      const url = `https://de.wiktionary.org/w/api.php?action=parse&page=Flexion:${encodeURIComponent(verb)}&prop=text&format=json&origin=*`;
       const res = await fetch(url);
       const data = await res.json();
 
