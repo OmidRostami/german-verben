@@ -163,26 +163,24 @@
   // Derive all 6 Konjunktiv II forms from ich form
   function deriveKonjunktiv2(ichForm) {
     if (!ichForm || ichForm === '—') return ['—','—','—','—','—','—'];
-    const base = ichForm; // always ends in -e
-    return [
-      base,               // ich
-      base + 'st',        // du
-      base,               // er/sie/es
-      base + 'n',         // wir
-      base + 't',         // ihr
-      base + 'n'          // sie/Sie
-    ];
+    const hasSep = ichForm.includes(' ');
+    const base = hasSep ? ichForm.split(' ')[0] : ichForm;
+    const suf  = hasSep ? ' ' + ichForm.split(' ')[1] : '';
+    return [base+suf, base+'st'+suf, base+suf, base+'n'+suf, base+'t'+suf, base+'n'+suf];
   }
 
   // Derive all 6 Präteritum forms from ich form
   function derivePrateritum(ichForm) {
     if (!ichForm || ichForm === '—') return ['—','—','—','—','—','—'];
-    const isWeak = ichForm.endsWith('te');
+    const hasSep = ichForm.includes(' ');
+    const stem = hasSep ? ichForm.split(' ')[0] : ichForm;
+    const suf  = hasSep ? ' ' + ichForm.split(' ')[1] : '';
+    const isWeak = stem.endsWith('te');
     if (isWeak) {
-      return [ichForm, ichForm+'st', ichForm, ichForm+'n', ichForm+'t', ichForm+'n'];
+      return [stem+suf, stem+'st'+suf, stem+suf, stem+'n'+suf, stem+'t'+suf, stem+'n'+suf];
     }
-    const duSuffix = /[sßzx]$/.test(ichForm) ? 'est' : 'st';
-    return [ichForm, ichForm+duSuffix, ichForm, ichForm+'en', ichForm+'t', ichForm+'en'];
+    const duSuffix = /[sßzx]$/.test(stem) ? 'est' : 'st';
+    return [stem+suf, stem+duSuffix+suf, stem+suf, stem+'en'+suf, stem+'t'+suf, stem+'en'+suf];
   }
 
   function cleanCell(el) {
@@ -233,8 +231,12 @@
       const pIch = g('Präsens_ich') || '—';
       const pDu  = g('Präsens_du') || '—';
       const pEr  = g('Präsens_er, sie, es', 'Präsens_er,sie,es', 'Präsens_er/sie/es') || '—';
-      const pWir = g('Präsens_wir') || verb;
-      const pSie = g('Präsens_sie', 'Präsens_sie, Sie') || verb;
+      // For separable verbs (pIch = "kaufe ein"), wir/sie = "kaufen ein" not "einkaufen"
+      const sepPrefix = pIch.includes(' ') ? pIch.split(' ').slice(1).join(' ') : null;
+      const wirBase   = sepPrefix ? verb.replace(new RegExp('^' + sepPrefix), '') : verb;
+      const wirForm   = sepPrefix ? wirBase + ' ' + sepPrefix : verb;
+      const pWir = g('Präsens_wir') || wirForm;
+      const pSie = g('Präsens_sie', 'Präsens_sie, Sie') || wirForm;
       const pIhr = g('Präsens_ihr') || deriveIhr(verb, pEr);
 
       // Konjunktiv II ich — try wikitext first, then HTML table, then Präteritum fallback
