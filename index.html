@@ -124,7 +124,6 @@
     document.getElementById('verbTitle').textContent = v;
     document.getElementById('searchStatus').textContent = '';
     document.getElementById('searchStatus').className = 'search-status';
-    document.getElementById('searchInput').value = '';
     buildRows(allVerbs[v].prasens, allVerbs[v].konjunktiv, false, allVerbs[v].prateritum || null);
     buildPerfekt(allVerbs[v].perfekt || null);
   }
